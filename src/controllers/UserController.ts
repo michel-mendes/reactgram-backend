@@ -1,7 +1,8 @@
+import { NextFunction, Request, Response } from "express";
 import { User } from "../models/User";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-import { NextFunction, Request, Response } from "express";
+import mongoose from "mongoose";
 
 const jwtSecret = process.env.JWT_SECRET!
 
@@ -72,6 +73,60 @@ async function getCurrenUser(req: Request, res: Response, next: NextFunction) {
     res.status(200).json( user )
 }
 
+async function getUserById(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.params
+
+    const user = await User.findById( id ).select("-password")
+
+    // Check if user found
+    if ( !user ) {
+        return res.status(404).json({message: "User not found"})
+    }
+
+    res.status(200).json( user )
+}
+
+async function update(req: Request, res: Response, next: NextFunction) {
+    const { name, password, bio } = req.body
+    const reqUser = (req as any).user
+    let profileImage: string | null = null
+
+    // Check if there's an image file in the request
+    if ( req.file ) {
+        profileImage = req.file.filename
+    }
+
+    const user = await User.findById( new mongoose.Types.ObjectId( reqUser._id ) ).select("-password")
+
+    if ( !user ) {
+        return res.status(404).json({ message: "User not found" })
+    }
+    
+    if ( name ) {
+        user.name = name
+    }
+
+    if ( password ) {
+        // Hashes the password
+        const salt = await bcrypt.genSalt()
+        const passwordHash = await bcrypt.hash(password, salt)
+
+        user.password = passwordHash
+    }
+
+    if ( profileImage ) {
+        user.profileImage = profileImage
+    }
+
+    if ( bio ) {
+        user.bio = bio
+    }
+
+    await user.save()
+
+    res.status(200).json( user )
+}
+
 export {
-    register, login, getCurrenUser
+    register, login, getCurrenUser, update, getUserById
 }
