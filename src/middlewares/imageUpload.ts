@@ -11,9 +11,9 @@ const imageStorage = multer.diskStorage({
 function setFilePath(req: Request, file: Express.Multer.File, callback: (error: Error | null, destination: string) => void) {
     let folder = ""
 
-    if ( req.baseUrl.includes( "user" ) ) {
-        folder = "user"
-    } else if ( req.baseUrl.includes( "photo" ) ) {
+    if ( req.baseUrl.includes( "users" ) ) {
+        folder = "users"
+    } else if ( req.baseUrl.includes( "photos" ) ) {
         folder = "photos"
     }
 

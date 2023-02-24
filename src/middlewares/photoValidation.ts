@@ -19,4 +19,22 @@ function photoInsertValidation() {
 
 }
 
-export { photoInsertValidation }
+function photoUpdateValidation() {
+
+    return [
+        body( "title" ).optional().notEmpty().withMessage("'title' must not be empty")
+                       .isLength({ min: 3 }).withMessage( "'title' must have at least 3 characters" )
+    ]
+
+}
+
+function photoCommentValidation() {
+
+    return [
+        body( "comment" ).notEmpty().withMessage("'comment' must be sent")
+                       .isLength({ min: 3 }).withMessage( "'comment' must have at least 3 characters" )
+    ]
+
+}
+
+export { photoInsertValidation, photoUpdateValidation, photoCommentValidation }
