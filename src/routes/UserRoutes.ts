@@ -1,5 +1,5 @@
 import express from "express"
-import { register, login, getCurrenUser, update, getUserById } from "../controllers/UserController"
+import { userController } from "../controllers/UserController"
 
 // Authorization
 import { authGuard } from "../middlewares/authGuard"
@@ -11,10 +11,10 @@ import { userCreateValidation, loginValidation, userUpdateValidation } from "../
 
 const userRouter = express.Router()
 
-userRouter.post( "/register", userCreateValidation(), validate, register )
-userRouter.post( "/login", loginValidation(), validate, login )
-userRouter.get ( "/profile", authGuard, getCurrenUser )
-userRouter.put ( "/", authGuard, userUpdateValidation(), validate, imageUpload.single( "profileImage" ), update )
-userRouter.get ( "/:id", getUserById )
+userRouter.post( "/register",   userCreateValidation(), validate, userController.register )
+userRouter.post( "/login",      loginValidation(), validate, userController.login )
+userRouter.get ( "/profile",    authGuard, userController.getCurrenUser )
+userRouter.put ( "/",           authGuard, userUpdateValidation(), validate, imageUpload.single( "profileImage" ), userController.update )
+userRouter.get ( "/:id",        userController.getUserById )
 
 export { userRouter }

@@ -1,132 +1,103 @@
-import { NextFunction, Request, Response } from "express";
-import { User } from "../models/User";
-import bcrypt from "bcryptjs"
+import {Request, Response, NextFunction} from "express"
 import jwt from "jsonwebtoken"
-import mongoose from "mongoose";
+
+// Route types
+import { IAuthenticatedRequest } from "../types/AuthenticatedRequest"
+
+// Database management
+import { User as userModel } from "../models/User";
+import { GenericMongooseModelCRUD } from "../classes/MongooseModelCRUD"
 
 const jwtSecret = process.env.JWT_SECRET!
+const crud = new GenericMongooseModelCRUD( userModel )
 
-// Helper functions
+export const userController = {
+    register, login, getCurrenUser, update, getUserById
+}
+
+// REGISTER AND SIGN IN THE USER
+// async function register( {reque, req, res, next}: IDefaultRoute ) {
+async function register( req: Request, res: Response, next: NextFunction ) {
+    try {
+        const { email } = req.body
+    
+        const existingUser = await crud.findOneDocument( {email} )
+        if ( existingUser ) return res.status(422).json({message: "Email already registered"})
+    
+        const newUser = await crud.insertDocument( req.body )
+    
+        res.status(201).json({
+            ...newUser.toJSON(),
+            token: generateToken( newUser.id )
+        })
+    } catch (error: any) {
+        next( error )
+    }
+}
+
+// LOGIN THE USER
+async function login( req: Request, res: Response, next: NextFunction ) {
+    try {
+        const { email, password } = req.body
+        const user = await crud.findOneDocument({ email })
+        
+        if ( !user ) return res.status(404).json({message: "User not found"})
+    
+        // If incorrect password, return error
+        if ( !( await user.isPasswordCorrect( password ) ) ) return res.status(422).json({message: "Invalid password"})
+    
+        // Return user with authorization token
+        res.status(201).json({
+            userId: user.id,
+            profileImage: user.profileImage,
+            token: generateToken( user.id )
+        })
+    } catch (error: any) {
+        next( error )
+    }
+}
+
+// GET CURRENT LOGGED IN USER
+async function getCurrenUser( req: IAuthenticatedRequest, res: Response, next: NextFunction ) {
+    try {
+        res.status(200).json( req.user )
+    } catch (error: any) {
+        next( error )
+    }
+}
+
+// GET USER BY ID
+async function getUserById( req: Request, res: Response, next: NextFunction ) {
+    try {
+        const { id } = req.params
+        const user = await crud.findDocumentById( id )
+    
+        res.status(200).json( user )
+    } catch (error: any) {
+        next( error )
+    }
+}
+
+// UPDATE THE USER
+async function update( req: IAuthenticatedRequest, res: Response, next: NextFunction ) {
+    try {
+        let profileImage: string | null = null
+    
+        // Check if there's an image file in the request
+        if ( req.file ) {
+            profileImage = req.file.filename
+        }
+        
+        const updatedUser = await crud.editDocument( req.user.id, { ...req.body, profileImage } )
+        
+        res.status(200).json( updatedUser )
+    } catch (error: any) {
+        next( error )
+    }
+}
+
+
+// HELPER FUNCTIONS
 function generateToken( userId: string ) {
     return jwt.sign( { userId }, jwtSecret, { expiresIn: "7d" })
-}
-
-// Register and sign in the User
-async function register(req: Request, res: Response, next: NextFunction) {
-    const { name, email, password } = req.body
-
-    const user = await User.findOne( {email} )
-
-    // Check if email already exists
-    if ( user ) {
-        res.status(422).json({message: "Email already registered"})
-        return
-    }
-
-    // Hashes the password
-    const salt = await bcrypt.genSalt()
-    const passwordHash = await bcrypt.hash( password, salt )
-
-    const newUser = await User.create({
-        name,
-        email,
-        password: passwordHash
-    })
-
-    if ( !newUser ) {
-        res.status(422).json({message: "Error while creating new user"})
-    }
-
-    res.status(201).json({
-        _id: newUser._id,
-        token: generateToken( newUser._id.toString() )
-    })
-}
-
-async function login(req: Request, res: Response, next: NextFunction) {
-    const { email, password } = req.body
-    const user = await User.findOne( {email} )
-
-    // Check if user exists
-    if ( !user ) {
-        res.status(404).json({message: "User not found"})
-        return
-    }
-
-    // Check if massword matches
-    if ( !( await bcrypt.compare( password, user.password! ) ) ) {
-        res.status(422).json({message: "Invalid password"})
-        return
-    }
-
-    // Return user with token
-    res.status(201).json({
-        _id: user._id,
-        profileImage: user.profileImage,
-        token: generateToken( user._id.toString() )
-    })
-}
-
-async function getCurrenUser(req: Request, res: Response, next: NextFunction) {
-    const user = (req as any).user
-
-    res.status(200).json( user )
-}
-
-async function getUserById(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.params
-
-    const user = await User.findById( id ).select("-password")
-
-    // Check if user found
-    if ( !user ) {
-        return res.status(404).json({message: "User not found"})
-    }
-
-    res.status(200).json( user )
-}
-
-async function update(req: Request, res: Response, next: NextFunction) {
-    const { name, password, bio } = req.body
-    const reqUser = (req as any).user
-    let profileImage: string | null = null
-
-    // Check if there's an image file in the request
-    if ( req.file ) {
-        profileImage = req.file.filename
-    }
-
-    const user = await User.findById( new mongoose.Types.ObjectId( reqUser._id ) ).select("-password")
-
-    if ( !user ) {
-        return res.status(404).json({ message: "User not found" })
-    }
-    
-    if ( name ) {
-        user.name = name
-    }
-
-    if ( password ) {
-        // Hashes the password
-        const salt = await bcrypt.genSalt()
-        const passwordHash = await bcrypt.hash(password, salt)
-
-        user.password = passwordHash
-    }
-
-    if ( profileImage ) {
-        user.profileImage = profileImage
-    }
-
-    if ( bio ) {
-        user.bio = bio
-    }
-
-    await user.save()
-
-    res.status(200).json( user )
-}
-
-export {
-    register, login, getCurrenUser, update, getUserById
 }

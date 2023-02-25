@@ -26,7 +26,6 @@ app.use( "/uploads", express.static( path.join( __dirname, "/uploads" ) ) )
 // App routes
 app.use( "/api", apiRouter )
 
-
 app.listen( port, async () => {
 
     // Database connection
