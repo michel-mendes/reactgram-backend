@@ -105,4 +105,4 @@ dist
 
 # Ignore the uploaded images
 src/uploads/photos/*
-src/uploads/user/*
+src/uploads/users/*

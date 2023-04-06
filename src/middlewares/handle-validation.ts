@@ -16,7 +16,9 @@ function validate( req: Request, res: Response, next: NextFunction) {
 
     // Send only the first error instead of sending the array itself
     return res.status(422).json({
-        message: errorsList[0]
+        errors: errorsList
+        // message: errorsList
+        // message: errorsList[0]
     })
 
 }

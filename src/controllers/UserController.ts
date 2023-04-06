@@ -28,7 +28,7 @@ async function register( req: Request, res: Response, next: NextFunction ) {
     
         res.status(201).json({
             ...newUser.toJSON(),
-            token: generateToken( newUser.id )
+            token: generateToken( newUser.id.toString() )
         })
     } catch (error: any) {
         next( error )
@@ -50,7 +50,7 @@ async function login( req: Request, res: Response, next: NextFunction ) {
         res.status(201).json({
             userId: user.id,
             profileImage: user.profileImage,
-            token: generateToken( user.id )
+            token: generateToken( user.id.toString() )
         })
     } catch (error: any) {
         next( error )
@@ -88,7 +88,7 @@ async function update( req: IAuthenticatedRequest, res: Response, next: NextFunc
             profileImage = req.file.filename
         }
         
-        const updatedUser = await crud.editDocument( req.user.id, { ...req.body, profileImage } )
+        const updatedUser = await crud.editDocument( req.user!.id.toString(), { ...req.body, profileImage } )
         
         res.status(200).json( updatedUser )
     } catch (error: any) {

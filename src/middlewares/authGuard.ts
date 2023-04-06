@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from "express"
-import { User } from "../models/User";
+import { User as userModel } from "../models/User";
+import { GenericMongooseModelCRUD } from "../classes/MongooseModelCRUD";
 import jwt from "jsonwebtoken"
+import { IAuthenticatedRequest } from "../types/AuthenticatedRequest";
 
 const secret = process.env.JWT_SECRET!
+const crud = new GenericMongooseModelCRUD( userModel )
 
-async function authGuard(req: Request, res: Response, next: NextFunction) {
+async function authGuard(req: IAuthenticatedRequest, res: Response, next: NextFunction) {
 
     const authHeader = req.headers["authorization"]
     const token = ( authHeader && authHeader.split( " " )[1] )
@@ -16,13 +19,10 @@ async function authGuard(req: Request, res: Response, next: NextFunction) {
 
     // Check if token is valid
     try {
-
         const verified = jwt.verify( token, secret ) as any;
-
-        (req as any).user = await User.findById( verified.userId ).select("-password")
+        req.user = await crud.findDocumentById( verified.userId )
 
         next()
-        
     } catch (error: any) {
         res.status(401).json({message: "Invalid token"})
     }

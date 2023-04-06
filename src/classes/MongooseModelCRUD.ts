@@ -1,4 +1,4 @@
-import mongoose, { Model } from "mongoose";
+import mongoose, { Model, Types } from "mongoose";
 
 export { GenericMongooseModelCRUD }
 
@@ -18,13 +18,17 @@ class GenericMongooseModelCRUD< Type extends mongoose.Document > {
         return await this.model.findById( newDocument.id ).populate( populateFieldsArray ).exec() as Type
     }
 
-    async findDocuments( searchQuery: mongoose.FilterQuery<Type> = {}, populateFields: string | string[] = "" ): Promise< Type[] > {
+    async findDocuments( searchQuery: mongoose.FilterQuery<Type> = {},
+                         populateFields: string | string[] = "",
+                         options: mongoose.QueryOptions = {} ): Promise< Type[] > {
+
         const populateFieldsArray = this.checkExistenceOfRefInModelAndConvertsToArray( populateFields )
         
-        return await this.model.find( searchQuery ).populate( populateFieldsArray ).exec()
+        return await this.model.find( searchQuery, {}, options ).populate( populateFieldsArray ).exec()
     }
-
+    
     async findOneDocument( searchQuery: mongoose.FilterQuery<Type> = {}, populateFields: string | string[] = "" ): Promise< Type | null > {
+
         const populateFieldsArray = this.checkExistenceOfRefInModelAndConvertsToArray( populateFields )
         const foundDocument = await this.model.findOne( searchQuery ).populate( populateFieldsArray ).exec() as Type
 

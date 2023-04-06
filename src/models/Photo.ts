@@ -1,6 +1,22 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, SchemaType, Types } from "mongoose";
 
-const photoSchema = new Schema({
+export interface IComment {
+    comment:    string,
+    userName:   string,
+    userImage:  string,
+    userId:     Types.ObjectId
+}
+
+interface IPhoto extends mongoose.Document {
+    image:      string,
+    title:      string,
+    likes:       Array< Types.ObjectId >,
+    comments:   Array< IComment >,
+    userId:     Types.ObjectId,
+    userName:   string
+}
+
+const photoSchema = new Schema< IPhoto >({
     image:      String,
     title:      String,
     likes:      Array,
@@ -9,9 +25,16 @@ const photoSchema = new Schema({
     userName:   String
 },
 {
-    timestamps: true
+    timestamps: true,
+    toJSON: {
+        virtuals: true,
+        versionKey: false,
+        transform: ( doc, ret ) => {
+            delete ret._id
+        }
+    }
 })
 
-const Photo = mongoose.model("Photo", photoSchema)
+const Photo = mongoose.model< IPhoto >("Photo", photoSchema)
 
 export { Photo }

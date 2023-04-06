@@ -8,6 +8,7 @@ export async function connectDatabase() {
 
     try {
 
+        mongoose.set("strictQuery", true)
         await mongoose.connect( connectionString )
         logger.info(`Successfully connected to MongoDB Atlas"`)
         

@@ -5,7 +5,8 @@ function userCreateValidation() {
     return [
         body( "name" ).notEmpty().withMessage("'name' must not be empty").isLength({ min: 3 }).withMessage( "'name' must have at least 3 characters" ),
         body( "email" ).notEmpty().withMessage("'email' must not be empty").isEmail().withMessage("'email' must be a valid email address"),
-        body( "password" ).notEmpty().withMessage("'password' must not be empty").isLength({min: 6}).withMessage("'password' must have at least 6 characters")
+        body( "password" ).notEmpty().withMessage("'password' must not be empty").isLength({min: 6}).withMessage("'password' must have at least 6 characters"),
+        body( "confirmPassword" ).notEmpty().withMessage("'confirmPassword' must not be empty").isLength({min: 6}).withMessage("'password' must have at least 6 characters")
     ]
 
 }
